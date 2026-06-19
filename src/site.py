@@ -4,6 +4,7 @@ from datetime import datetime
 import io
 import subprocess
 import platform
+from user_files_analysis import analyse_user_data
 
 # Инициализация сессионного состояния для хранения файлов
 if 'audio_files' not in st.session_state:
@@ -158,6 +159,15 @@ with col1:
         st.write("Анализируемые файлы:")
         for i, file in enumerate(st.session_state.audio_files, 1):
             st.write(f"{i}. {file['name']} ({file['type']})")
+        result = analyse_user_data()
+        match result:
+            case -1:
+                st.error('В детали присутствует дефект')
+            case 0:
+                st.warning('Определить наличие дефекта по заданным данным не удалось. Попробуйте ещё раз')
+            case 1:
+                st.success('Дефекты в детали отстутвуют')
+
 
 # Правая колонка - список файлов
 with col2:
