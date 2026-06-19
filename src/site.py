@@ -5,6 +5,7 @@ import io
 import subprocess
 import platform
 from user_files_analysis import analyse_user_data
+import time
 
 # Инициализация сессионного состояния для хранения файлов
 if 'audio_files' not in st.session_state:
@@ -13,6 +14,25 @@ if 'pending_recording' not in st.session_state:
     st.session_state.pending_recording = None
 if 'show_save_dialog' not in st.session_state:
     st.session_state.show_save_dialog = False
+if 'widget_key_suffix' not in st.session_state:
+    st.session_state.widget_key_suffix = 0
+
+
+@st.dialog("Результат")
+def show_result(result: int):
+    match result:
+        case -1:
+            st.error('В детали присутствует дефект')
+        case 0:
+            st.warning('Определить наличие дефекта по заданным данным не удалось. Попробуйте ещё раз')
+        case 1:
+            st.success('Дефекты в детали отстутвуют')
+    if st.button('Назад'):
+        st.session_state.audio_files = []
+        st.session_state.pending_recording = None
+        st.session_state.show_save_dialog = False
+        st.session_state.widget_key_suffix += 1
+        st.rerun()
 
 
 # Функция для сохранения аудиофайла
@@ -63,7 +83,7 @@ with col1:
         # Запись аудио
         recorded_audio = st.audio_input(
             "Записать аудио с микрофона",
-            key="audio_recorder"
+            key=f"audio_recorder_{st.session_state.widget_key_suffix}"
         )
 
         if recorded_audio is not None:
@@ -79,7 +99,7 @@ with col1:
             "Загрузите готовые файлы (.mp3)",
             type=["mp3"],
             accept_multiple_files=True,
-            key="file_uploader"
+            key=f"file_uploader_{st.session_state.widget_key_suffix}"
         )
 
         if uploaded_files:
@@ -160,13 +180,7 @@ with col1:
         for i, file in enumerate(st.session_state.audio_files, 1):
             st.write(f"{i}. {file['name']} ({file['type']})")
         result = analyse_user_data()
-        match result:
-            case -1:
-                st.error('В детали присутствует дефект')
-            case 0:
-                st.warning('Определить наличие дефекта по заданным данным не удалось. Попробуйте ещё раз')
-            case 1:
-                st.success('Дефекты в детали отстутвуют')
+        show_result(result)
 
 
 # Правая колонка - список файлов
